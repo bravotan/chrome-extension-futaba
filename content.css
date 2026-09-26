@@ -1,0 +1,15 @@
+#futaba-helper-panel-container {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 300px;
+  height: 100vh;
+  z-index: 2147483647;
+}
+
+#futaba-helper-panel-iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+  display: block;
+}
