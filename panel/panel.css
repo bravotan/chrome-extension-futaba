@@ -1,8 +1,36 @@
 body {
   margin: 0;
-  padding: 8px;
-  font-family: sans-serif;
+  padding: 0;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
   font-size: 12px;
-  background: #f0e0d6;
+  background: #fcfcfb;
   box-sizing: border-box;
+}
+
+#panel-root {
+  display: flex;
+  flex-direction: column;
+}
+
+.reply-heatmap {
+  display: flex;
+  flex-direction: column;
+}
+
+.reply-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 3px 8px;
+  border-bottom: 1px solid rgba(11, 11, 11, 0.08);
+}
+
+.reply-label {
+  font-weight: 600;
+}
+
+.reply-good {
+  font-variant-numeric: tabular-nums;
+  min-width: 2em;
+  text-align: right;
 }

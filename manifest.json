@@ -13,7 +13,12 @@
   ],
   "web_accessible_resources": [
     {
-      "resources": ["panel/panel.html", "panel/panel.css", "panel/panel.js"],
+      "resources": [
+        "panel/panel.html",
+        "panel/panel.css",
+        "panel/panel.js",
+        "panel/colors.js"
+      ],
       "matches": ["*://*.2chan.net/*"]
     }
   ]
