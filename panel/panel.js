@@ -131,7 +131,11 @@ function updateViewportIndicator() {
   const { firstIndex, lastIndex, total } = lastViewport;
 
   if (debugLabel) {
-    debugLabel.textContent = `${firstIndex + 1}-${lastIndex + 1}/${total}`;
+    const first = currentReplies[firstIndex];
+    const last = currentReplies[lastIndex];
+    debugLabel.textContent =
+      `${firstIndex + 1}(No.${first ? first.resNo : "?"})` +
+      `-${lastIndex + 1}(No.${last ? last.resNo : "?"})/${total}`;
   }
 
   if (!indicator) return;
