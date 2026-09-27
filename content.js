@@ -47,24 +47,34 @@
   function opContentRect(el) {
     let top = null;
     let bottom = null;
+    let width = 0;
     for (const child of el.children) {
       if (child.tagName === "TABLE") break;
       const rect = child.getBoundingClientRect();
       if (rect.width === 0 && rect.height === 0) continue;
+      width = Math.max(width, rect.width);
       if (top === null || rect.top < top) top = rect.top;
       if (bottom === null || rect.bottom > bottom) bottom = rect.bottom;
     }
     if (top === null) {
       const rect = el.getBoundingClientRect();
-      return { top: rect.top, height: 0 };
+      return { top: rect.top, height: 0, width: 0 };
     }
-    return { top, height: bottom - top };
+    return { top, height: bottom - top, width };
   }
 
+  // 削除されたレスなど display:none 等で描画されていない要素は
+  // getBoundingClientRect() が幅・高さとも0を返す。この場合 window.scrollY を
+  // 足した絶対座標は「計算した瞬間のスクロール位置そのもの」になってしまい、
+  // 常に「今表示中」判定にヒットし続けて現在地マーカーがそこに張り付くバグになる。
+  // 幅・高さが両方0の要素は「位置不明」として現在地判定の対象から外す。
   function buildPositions() {
     positions = Array.from(containerById.entries()).map(([id, el]) => {
-      const { top: relTop, height } =
+      const { top: relTop, height, width } =
         el === threEl ? opContentRect(threEl) : el.getBoundingClientRect();
+      if (width === 0 && height === 0) {
+        return { id, hidden: true };
+      }
       const top = relTop + window.scrollY;
       return { id, top, bottom: top + height };
     });
@@ -95,6 +105,7 @@
     let lastIndex = -1;
     for (let i = 0; i < positions.length; i++) {
       const p = positions[i];
+      if (p.hidden) continue;
       if (p.bottom >= viewTop && p.top <= viewBottom) {
         if (firstIndex === -1) firstIndex = i;
         lastIndex = i;
