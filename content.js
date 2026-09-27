@@ -30,8 +30,12 @@
     threEl.querySelectorAll("a.sod").forEach((sod) => {
       const idMatch = sod.id.match(/^sd(\d+)$/);
       if (!idMatch) return;
-      const table = sod.closest("table");
-      containerById.set(idMatch[1], table || threEl);
+      // table 全体ではなく td.rtd を使う: 一部の崩れたHTML(閉じタグ漏れ等)で
+      // ブラウザが複数の <table> を1つにマージしてしまうと、そのレス以降ずっと
+      // bounding box が異常に広がり、現在地判定がおかしくなることがあるため、
+      // extract.js と同じ、より狭い td.rtd を基準にする。
+      const rtd = sod.closest("td.rtd");
+      containerById.set(idMatch[1], rtd || threEl);
     });
   }
 
