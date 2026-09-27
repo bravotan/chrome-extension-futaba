@@ -67,17 +67,6 @@ body {
   border-bottom: none;
 }
 
-#debug-label {
-  flex-shrink: 0;
-  font-size: 9px;
-  font-variant-numeric: tabular-nums;
-  text-align: center;
-  padding: 2px 0;
-  color: #52514e;
-  background: #f0efec;
-  border-bottom: 1px solid rgba(11, 11, 11, 0.1);
-}
-
 /* 現在ブラウザで見えている範囲を示す三角マーカー(帯オーバーレイだと縞模様に埋もれて
    見えなかったため、色の外=左の余白から指す形にして視認性を確保する) */
 #viewport-indicator {

@@ -113,11 +113,6 @@ function renderReplies(replies) {
     viewportIndicator.id = "viewport-indicator";
     viewportIndicator.hidden = true;
     list.appendChild(viewportIndicator);
-
-    // 動作確認用の実測値表示(不具合調査のため一時的に常時表示)
-    const debugLabel = document.createElement("div");
-    debugLabel.id = "debug-label";
-    root.appendChild(debugLabel);
   }
 
   root.appendChild(list);
@@ -126,17 +121,8 @@ function renderReplies(replies) {
 
 function updateViewportIndicator() {
   const indicator = document.getElementById("viewport-indicator");
-  const debugLabel = document.getElementById("debug-label");
   if (!lastViewport || currentReplies.length === 0) return;
   const { firstIndex, lastIndex, total } = lastViewport;
-
-  if (debugLabel) {
-    const first = currentReplies[firstIndex];
-    const last = currentReplies[lastIndex];
-    debugLabel.textContent =
-      `${firstIndex + 1}(No.${first ? first.resNo : "?"})` +
-      `-${lastIndex + 1}(No.${last ? last.resNo : "?"})/${total}`;
-  }
 
   if (!indicator) return;
   const center = (firstIndex + lastIndex + 1) / 2 / total;
