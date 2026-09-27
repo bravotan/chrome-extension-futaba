@@ -70,8 +70,7 @@ function renderReplies(replies) {
   if (replies.length === 0) return;
 
   const goods = replies.map((r) => r.good);
-  const min = Math.min(...goods);
-  const max = Math.max(...goods);
+  const { min, max } = FutabaHeatmap.percentileBounds(goods, 0.05, 0.95);
   const minimap = replies.length > MINIMAP_THRESHOLD;
 
   const list = document.createElement("div");
@@ -124,10 +123,8 @@ function updateViewportIndicator() {
   const indicator = document.getElementById("viewport-indicator");
   if (!indicator || !lastViewport || currentReplies.length === 0) return;
   const { firstIndex, lastIndex, total } = lastViewport;
-  const top = (firstIndex / total) * 100;
-  const height = ((lastIndex - firstIndex + 1) / total) * 100;
-  indicator.style.top = `${top}%`;
-  indicator.style.height = `${Math.max(height, 0.5)}%`;
+  const center = (firstIndex + lastIndex + 1) / 2 / total;
+  indicator.style.top = `${center * 100}%`;
   indicator.hidden = false;
 }
 

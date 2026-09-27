@@ -94,6 +94,16 @@ window.FutabaHeatmap = (function () {
     return (value - min) / (max - min);
   }
 
+  // 外れ値(一部だけ突出して多いそうだね数)に引っ張られて残りが潰れないよう、
+  // 上下 lowPct/highPct 分位点を min/max として使う(値自体はクリップしない。
+  // heatColor 側で t を 0〜1 にクランプするので範囲外は自然に両端の色になる)。
+  function percentileBounds(values, lowPct = 0.05, highPct = 0.95) {
+    if (values.length === 0) return { min: 0, max: 0 };
+    const sorted = [...values].sort((a, b) => a - b);
+    const at = (p) => sorted[Math.min(sorted.length - 1, Math.floor(p * (sorted.length - 1)))];
+    return { min: at(lowPct), max: at(highPct) };
+  }
+
   // 背景色に対して読みやすい文字色(黒 or 白)を選ぶ
   function textColorFor(bgLum) {
     const white = (1.0 + 0.05) / (bgLum + 0.05);
@@ -101,5 +111,5 @@ window.FutabaHeatmap = (function () {
     return white >= black ? "#ffffff" : "#0b0b0b";
   }
 
-  return { heatColor, normalize, textColorFor };
+  return { heatColor, normalize, percentileBounds, textColorFor };
 })();
