@@ -117,7 +117,7 @@ function renderReplies(replies) {
     // 動作確認用の実測値表示(不具合調査のため一時的に常時表示)
     const debugLabel = document.createElement("div");
     debugLabel.id = "debug-label";
-    root.insertBefore(debugLabel, list);
+    root.appendChild(debugLabel);
   }
 
   root.appendChild(list);
