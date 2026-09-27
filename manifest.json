@@ -7,7 +7,7 @@
     {
       "matches": ["*://*.2chan.net/*"],
       "css": ["content.css"],
-      "js": ["content.js"],
+      "js": ["extract.js", "content.js"],
       "run_at": "document_end"
     }
   ],
