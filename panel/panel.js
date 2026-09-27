@@ -72,7 +72,6 @@ function renderReplies(replies) {
   const goods = replies.map((r) => r.good);
   const { min, max } = FutabaHeatmap.percentileBounds(goods, 0.05, 0.95);
   const minimap = replies.length > MINIMAP_THRESHOLD;
-  window.parent.postMessage({ type: "futaba-helper:mode", minimap }, "*");
 
   const list = document.createElement("div");
   list.className = minimap ? "reply-heatmap minimap" : "reply-heatmap";
@@ -114,6 +113,11 @@ function renderReplies(replies) {
     viewportIndicator.id = "viewport-indicator";
     viewportIndicator.hidden = true;
     list.appendChild(viewportIndicator);
+
+    // 動作確認用の実測値表示(不具合調査のため一時的に常時表示)
+    const debugLabel = document.createElement("div");
+    debugLabel.id = "debug-label";
+    root.insertBefore(debugLabel, list);
   }
 
   root.appendChild(list);
@@ -122,8 +126,15 @@ function renderReplies(replies) {
 
 function updateViewportIndicator() {
   const indicator = document.getElementById("viewport-indicator");
-  if (!indicator || !lastViewport || currentReplies.length === 0) return;
+  const debugLabel = document.getElementById("debug-label");
+  if (!lastViewport || currentReplies.length === 0) return;
   const { firstIndex, lastIndex, total } = lastViewport;
+
+  if (debugLabel) {
+    debugLabel.textContent = `${firstIndex + 1}-${lastIndex + 1}/${total}`;
+  }
+
+  if (!indicator) return;
   const center = (firstIndex + lastIndex + 1) / 2 / total;
   indicator.style.top = `${center * 100}%`;
   indicator.hidden = false;

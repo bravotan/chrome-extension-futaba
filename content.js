@@ -35,19 +35,47 @@
     });
   }
 
+  // OP の要素は sod.closest("table") が無いため threEl(スレ全体) が入っている。
+  // threEl.getBoundingClientRect() をそのまま使うとOPの範囲がスレ全体(先頭〜末尾)に
+  // なってしまい、常に「表示中」判定に引っかかって現在地マーカーが常に先頭寄りに
+  // 引っ張られる(=常に真ん中付近に張り付く)バグになるため、OPは自分の直接の子要素
+  // (最初の<table>より前)だけから範囲を計算する。
+  function opContentRect(el) {
+    let top = null;
+    let bottom = null;
+    for (const child of el.children) {
+      if (child.tagName === "TABLE") break;
+      const rect = child.getBoundingClientRect();
+      if (rect.width === 0 && rect.height === 0) continue;
+      if (top === null || rect.top < top) top = rect.top;
+      if (bottom === null || rect.bottom > bottom) bottom = rect.bottom;
+    }
+    if (top === null) {
+      const rect = el.getBoundingClientRect();
+      return { top: rect.top, height: 0 };
+    }
+    return { top, height: bottom - top };
+  }
+
   function buildPositions() {
     positions = Array.from(containerById.entries()).map(([id, el]) => {
-      const rect = el.getBoundingClientRect();
-      const top = rect.top + window.scrollY;
-      return { id, top, bottom: top + rect.height };
+      const { top: relTop, height } =
+        el === threEl ? opContentRect(threEl) : el.getBoundingClientRect();
+      const top = relTop + window.scrollY;
+      return { id, top, bottom: top + height };
     });
   }
+
+  const MINIMAP_THRESHOLD = 60; // panel/panel.js の同名定数と合わせる
 
   function sendReplies() {
     buildContainerMap();
     const replies = FutabaExtract.extractReplies(threEl);
     if (replies.length === 0) return;
     buildPositions();
+    // ミニマップ判定は panel.js からの返信を待たず、ここで直接幅を決める
+    // (メッセージの往復に依存すると失敗ポイントが増えるため)。
+    container.style.width = replies.length > MINIMAP_THRESHOLD ? "72px" : "300px";
     iframe.contentWindow.postMessage(
       { type: "futaba-helper:replies", replies },
       panelOrigin
@@ -99,8 +127,6 @@
     if (!data) return;
     if (data.type === "futaba-helper:jump") {
       jumpTo(data.id);
-    } else if (data.type === "futaba-helper:mode") {
-      container.style.width = data.minimap ? "72px" : "300px";
     }
   });
 
