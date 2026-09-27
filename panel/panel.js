@@ -72,6 +72,7 @@ function renderReplies(replies) {
   const goods = replies.map((r) => r.good);
   const { min, max } = FutabaHeatmap.percentileBounds(goods, 0.05, 0.95);
   const minimap = replies.length > MINIMAP_THRESHOLD;
+  window.parent.postMessage({ type: "futaba-helper:mode", minimap }, "*");
 
   const list = document.createElement("div");
   list.className = minimap ? "reply-heatmap minimap" : "reply-heatmap";

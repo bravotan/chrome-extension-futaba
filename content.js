@@ -96,8 +96,11 @@
   window.addEventListener("message", (event) => {
     if (event.source !== iframe.contentWindow) return;
     const data = event.data;
-    if (data && data.type === "futaba-helper:jump") {
+    if (!data) return;
+    if (data.type === "futaba-helper:jump") {
       jumpTo(data.id);
+    } else if (data.type === "futaba-helper:mode") {
+      container.style.width = data.minimap ? "72px" : "300px";
     }
   });
 
@@ -111,11 +114,30 @@
     });
   });
 
-  let mutationPending = null;
-  const observer = new MutationObserver(() => {
-    clearTimeout(mutationPending);
-    mutationPending = setTimeout(sendReplies, 300);
-  });
+  // そうだね数の更新や新着レスが途切れず続く活発なスレだと、単純な debounce では
+  // タイマーが延々リセットされ続けて位置情報(ミニマップの現在地)が更新されないまま
+  // 古くなってしまう。最大待ち時間を設けたthrottleにして、更新が途切れなくても
+  // 一定間隔ごとには必ず反映されるようにする。
+  const SEND_REPLIES_MAX_WAIT = 500;
+  let mutationTimer = null;
+  let lastSent = 0;
+  function scheduleSendReplies() {
+    const now = Date.now();
+    const elapsed = now - lastSent;
+    if (elapsed >= SEND_REPLIES_MAX_WAIT) {
+      lastSent = now;
+      sendReplies();
+      return;
+    }
+    if (mutationTimer) return;
+    mutationTimer = setTimeout(() => {
+      mutationTimer = null;
+      lastSent = Date.now();
+      sendReplies();
+    }, SEND_REPLIES_MAX_WAIT - elapsed);
+  }
+
+  const observer = new MutationObserver(scheduleSendReplies);
   observer.observe(threEl, {
     childList: true,
     subtree: true,
