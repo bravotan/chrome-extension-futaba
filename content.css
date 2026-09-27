@@ -13,3 +13,16 @@
   border: none;
   display: block;
 }
+
+@keyframes futaba-helper-flash {
+  0% {
+    background-color: rgba(255, 191, 0, 0.6);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
+.futaba-helper-flash {
+  animation: futaba-helper-flash 1.2s ease-out;
+}

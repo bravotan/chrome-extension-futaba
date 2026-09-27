@@ -1,3 +1,8 @@
+html,
+body {
+  height: 100%;
+}
+
 body {
   margin: 0;
   padding: 0;
@@ -10,27 +15,85 @@ body {
 #panel-root {
   display: flex;
   flex-direction: column;
+  height: 100%;
 }
 
 .reply-heatmap {
   display: flex;
   flex-direction: column;
+  position: relative;
 }
 
 .reply-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 6px;
   padding: 3px 8px;
   border-bottom: 1px solid rgba(11, 11, 11, 0.08);
+  cursor: pointer;
+}
+
+.reply-resno {
+  font-variant-numeric: tabular-nums;
+  opacity: 0.75;
+  min-width: 2.5em;
 }
 
 .reply-label {
   font-weight: 600;
+  flex: 1;
 }
 
 .reply-good {
   font-variant-numeric: tabular-nums;
   min-width: 2em;
   text-align: right;
+}
+
+/* レス数が多いスレ用のミニマップ表示: テキストなし、行は均等割りで全体を一望できる */
+.reply-heatmap.minimap {
+  flex: 1;
+  min-height: 0;
+}
+
+.reply-heatmap.minimap .reply-row {
+  flex: 1 1 0;
+  min-height: 1px;
+  padding: 0;
+  border-bottom: none;
+}
+
+#viewport-indicator {
+  position: absolute;
+  left: 0;
+  right: 0;
+  border: 1px solid rgba(11, 11, 11, 0.6);
+  background: rgba(255, 255, 255, 0.15);
+  pointer-events: none;
+}
+
+#reply-tooltip {
+  position: fixed;
+  z-index: 2147483647;
+  max-width: 260px;
+  background: #0b0b0b;
+  color: #ffffff;
+  padding: 6px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  line-height: 1.5;
+  pointer-events: none;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.tooltip-meta {
+  font-weight: 600;
+  opacity: 0.85;
+  margin-bottom: 2px;
+}
+
+.tooltip-body {
+  white-space: pre-wrap;
+  word-break: break-word;
 }

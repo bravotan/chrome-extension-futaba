@@ -6,6 +6,7 @@
 // として .thre の子に並ぶ(入れ子にはならない)。
 // そうだねボタンは <a class="sod" id="sd<投稿ID>">+</a> または
 // <a class="sod" id="sd<投稿ID>">そうだねx<件数></a> という形。
+// レス番号は <span class="rsc">1</span> のように振られる(OPには無いので0扱いにする)。
 window.FutabaExtract = (function () {
   function hasOpMedia(threEl) {
     for (const child of threEl.children) {
@@ -22,18 +23,31 @@ window.FutabaExtract = (function () {
     return match ? parseInt(match[1], 10) : 0;
   }
 
+  function commentText(container) {
+    const blockquote = container.querySelector("blockquote");
+    if (!blockquote) return "";
+    const clone = blockquote.cloneNode(true);
+    clone.querySelectorAll("br").forEach((br) => br.replaceWith("\n"));
+    return clone.textContent.replace(/\n{2,}/g, "\n").trim();
+  }
+
   function extractReplies(threEl) {
     if (!threEl) return [];
     const opMedia = hasOpMedia(threEl);
 
     return Array.from(threEl.querySelectorAll("a.sod")).map((sod) => {
       const rtd = sod.closest("td.rtd");
+      const container = rtd || threEl;
       const hasMedia = rtd ? !!rtd.querySelector("img") : opMedia;
       const idMatch = sod.id.match(/^sd(\d+)$/);
+      const rscEl = rtd ? rtd.querySelector(".rsc") : null;
+
       return {
         id: idMatch ? idMatch[1] : null,
+        resNo: rscEl ? parseInt(rscEl.textContent, 10) : 0,
         kind: hasMedia ? "media" : "text",
         good: parseGood(sod.textContent),
+        comment: commentText(container),
       };
     });
   }
