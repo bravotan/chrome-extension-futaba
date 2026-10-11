@@ -12,21 +12,6 @@ const MINIMAP_THRESHOLD = 60;
 
 let currentReplies = SAMPLE_REPLIES;
 let lastViewport = null; // { firstIndex, lastIndex, total }
-let archiveUrl = null;
-
-function renderArchiveLink() {
-  if (!archiveUrl) return;
-  const root = document.getElementById("panel-root");
-  if (document.getElementById("archive-link")) return;
-  const link = document.createElement("a");
-  link.id = "archive-link";
-  link.href = archiveUrl;
-  link.target = "_blank";
-  link.rel = "noopener noreferrer";
-  link.textContent = "保管";
-  link.title = "アーカイブ(ftbucket)で開く";
-  root.insertBefore(link, root.firstChild);
-}
 
 const tooltip = document.createElement("div");
 tooltip.id = "reply-tooltip";
@@ -81,7 +66,6 @@ function renderReplies(replies) {
   const root = document.getElementById("panel-root");
   root.innerHTML = "";
   hideTooltip();
-  renderArchiveLink();
 
   if (replies.length === 0) return;
 
@@ -179,9 +163,6 @@ window.addEventListener("message", (event) => {
   } else if (data.type === "futaba-helper:viewport") {
     lastViewport = data;
     updateViewportIndicator();
-  } else if (data.type === "futaba-helper:archive") {
-    archiveUrl = data.url;
-    renderArchiveLink();
   }
 });
 

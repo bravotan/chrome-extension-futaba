@@ -156,6 +156,47 @@
     };
   }
 
+  // スレ内で最初に見つかった画像(OPにあればOP、無ければ最初のレスの画像)を縮小して
+  // data URL化し、拡張側に保持する。元画像をそのまま参照すると元スレが消えた時に
+  // 一緒に見えなくなるため、ダッシュボードで使う分は複製して持っておく。
+  // 元画像のURL自体は imgUrl として別に残しておき、後で生存確認(そのURLがまだ
+  // 読み込めるか)のビーコン代わりに使えるようにする。
+  const THUMB_MAX_SIZE = 120;
+  function captureThumbnail() {
+    const img = threEl.querySelector("img");
+    if (!img) return Promise.resolve({ thumbDataUrl: null, imgUrl: null });
+    const imgUrl = img.src;
+
+    const draw = () =>
+      new Promise((resolve) => {
+        try {
+          const scale = Math.min(
+            1,
+            THUMB_MAX_SIZE / Math.max(img.naturalWidth, img.naturalHeight)
+          );
+          const canvas = document.createElement("canvas");
+          canvas.width = Math.max(1, Math.round(img.naturalWidth * scale));
+          canvas.height = Math.max(1, Math.round(img.naturalHeight * scale));
+          const ctx = canvas.getContext("2d");
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          resolve(canvas.toDataURL("image/jpeg", 0.7));
+        } catch {
+          // クロスオリジン等でcanvasが汚染されて読み出せない場合は諦める
+          resolve(null);
+        }
+      });
+
+    if (img.complete && img.naturalWidth > 0) {
+      return draw().then((thumbDataUrl) => ({ thumbDataUrl, imgUrl }));
+    }
+    return new Promise((resolve) => {
+      const onDone = (thumbDataUrl) => resolve({ thumbDataUrl, imgUrl });
+      img.addEventListener("load", () => draw().then(onDone), { once: true });
+      img.addEventListener("error", () => onDone(null), { once: true });
+      setTimeout(() => onDone(null), 3000);
+    });
+  }
+
   function jumpTo(id) {
     const el = containerById.get(String(id));
     if (!el) return;
@@ -170,15 +211,14 @@
   iframe.addEventListener("load", () => {
     sendReplies();
     const archiveUrl = computeArchiveUrl();
-    if (archiveUrl) {
-      iframe.contentWindow.postMessage(
-        { type: "futaba-helper:archive", url: archiveUrl },
-        panelOrigin
-      );
-    }
     const meta = extractThreadMeta();
     if (meta) {
-      FutabaTracker.upsert({ ...meta, archiveUrl });
+      captureThumbnail().then(({ thumbDataUrl, imgUrl }) => {
+        const entry = { ...meta, archiveUrl };
+        if (thumbDataUrl) entry.thumbDataUrl = thumbDataUrl;
+        if (imgUrl) entry.imgUrl = imgUrl;
+        FutabaTracker.upsert(entry);
+      });
     }
   });
 

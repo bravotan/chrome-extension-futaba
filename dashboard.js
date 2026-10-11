@@ -84,6 +84,16 @@ function renderCard(thread) {
   const card = document.createElement("div");
   card.className = "thread-card";
 
+  const thumb = document.createElement("div");
+  thumb.className = "thread-thumb";
+  if (thread.thumbDataUrl) {
+    const img = document.createElement("img");
+    img.src = thread.thumbDataUrl;
+    img.alt = "";
+    thumb.appendChild(img);
+  }
+  card.appendChild(thumb);
+
   const info = document.createElement("div");
   info.className = "thread-info";
 
