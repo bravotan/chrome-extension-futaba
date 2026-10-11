@@ -3,11 +3,18 @@
   "name": "ふたばちゃんねる支援ツール",
   "version": "0.1.0",
   "description": "ふたばちゃんねる(2chan.net)PC版に情報表示用パネルをiframeで追加する拡張機能",
+  "permissions": ["storage"],
+  "action": {
+    "default_title": "チェックしたスレ一覧"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
   "content_scripts": [
     {
       "matches": ["*://*.2chan.net/*", "*://*.ftbucket.info/*"],
       "css": ["content.css"],
-      "js": ["extract.js", "content.js"],
+      "js": ["extract.js", "tracker.js", "content.js"],
       "run_at": "document_end"
     }
   ],

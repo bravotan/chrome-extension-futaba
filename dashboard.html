@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <title>チェックしたスレ一覧</title>
+  <link rel="stylesheet" href="dashboard.css" />
+</head>
+<body>
+  <header>
+    <h1>チェックしたスレ一覧</h1>
+    <div class="toolbar">
+      <input type="text" id="filter" placeholder="タイトルで絞り込み" />
+      <button id="clear-all">全て削除</button>
+    </div>
+  </header>
+  <main id="thread-list"></main>
+  <p id="empty-message" hidden>まだ記録されたスレがありません。ふたばのスレを開くと自動的にここに追加されます。</p>
+  <script src="tracker.js"></script>
+  <script src="dashboard.js"></script>
+</body>
+</html>

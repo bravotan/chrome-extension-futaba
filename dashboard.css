@@ -1,0 +1,124 @@
+body {
+  margin: 0;
+  padding: 24px;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  background: #f9f9f7;
+  color: #0b0b0b;
+}
+
+header {
+  max-width: 760px;
+  margin: 0 auto 16px;
+}
+
+h1 {
+  font-size: 18px;
+  margin: 0 0 12px;
+}
+
+.toolbar {
+  display: flex;
+  gap: 8px;
+}
+
+#filter {
+  flex: 1;
+  font: inherit;
+  font-size: 13px;
+  padding: 6px 10px;
+  border: 1px solid #c3c2b7;
+  border-radius: 6px;
+}
+
+button {
+  font: inherit;
+  font-size: 13px;
+  padding: 6px 12px;
+  border: 1px solid #c3c2b7;
+  border-radius: 6px;
+  background: #fcfcfb;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #f0efec;
+}
+
+main {
+  max-width: 760px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.thread-card {
+  background: #fcfcfb;
+  border: 1px solid #e1e0d9;
+  border-radius: 8px;
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.thread-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.thread-title {
+  font-weight: 600;
+  font-size: 13px;
+  margin-bottom: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.thread-meta {
+  font-size: 11px;
+  color: #52514e;
+}
+
+.thread-links {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.thread-links a {
+  font-size: 12px;
+  text-decoration: none;
+  color: #2a78d6;
+  border: 1px solid #c3c2b7;
+  border-radius: 6px;
+  padding: 4px 8px;
+}
+
+.thread-links a:hover {
+  text-decoration: underline;
+}
+
+.remove-btn {
+  flex-shrink: 0;
+  color: #898781;
+  border: none;
+  background: none;
+  font-size: 16px;
+  line-height: 1;
+  padding: 4px;
+}
+
+.remove-btn:hover {
+  color: #e34948;
+  background: none;
+}
+
+#empty-message {
+  max-width: 760px;
+  margin: 40px auto;
+  text-align: center;
+  color: #898781;
+  font-size: 13px;
+}

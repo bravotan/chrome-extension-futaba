@@ -139,6 +139,23 @@
     return `https://${sub}2.ftbucket.info/${sub}/cont/${folder}/index.htm`;
   }
 
+  // チェックしたスレの情報(タイトル・発生時間・推定消滅時間)をダッシュボード用に記録する。
+  function extractThreadMeta() {
+    const threadId = threEl.getAttribute("data-res");
+    if (!threadId) return null;
+    const rawTitle = document.title || "";
+    const title = rawTitle.split(" - ")[0].trim() || rawTitle.trim() || threadId;
+    const createdEl = threEl.querySelector(".cnw");
+    const expiryEl = threEl.querySelector(".cntd");
+    return {
+      id: threadId,
+      title,
+      url: location.href,
+      createdText: createdEl ? createdEl.textContent.trim() : "",
+      expiryText: expiryEl ? expiryEl.textContent.trim() : "",
+    };
+  }
+
   function jumpTo(id) {
     const el = containerById.get(String(id));
     if (!el) return;
@@ -158,6 +175,10 @@
         { type: "futaba-helper:archive", url: archiveUrl },
         panelOrigin
       );
+    }
+    const meta = extractThreadMeta();
+    if (meta) {
+      FutabaTracker.upsert({ ...meta, archiveUrl });
     }
   });
 
