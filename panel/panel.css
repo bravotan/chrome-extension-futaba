@@ -18,6 +18,23 @@ body {
   height: 100%;
 }
 
+#archive-link {
+  flex-shrink: 0;
+  display: block;
+  text-align: center;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 0;
+  color: #2a78d6;
+  background: #f0efec;
+  text-decoration: none;
+  border-bottom: 1px solid rgba(11, 11, 11, 0.1);
+}
+
+#archive-link:hover {
+  text-decoration: underline;
+}
+
 .reply-heatmap {
   display: flex;
   flex-direction: column;

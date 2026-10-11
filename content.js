@@ -123,6 +123,22 @@
     );
   }
 
+  // ふたば本体(2chan.net)を見ているときだけ、ftbucketアーカイブへのリンクを出す。
+  // URL変換規則は実例からの推測(例: https://may.2chan.net/b/res/123.htm ->
+  // https://may2.ftbucket.info/may/cont/may.2chan.net_b_res_123/index.htm)で、
+  // 全板で通用する保証はないため外れたら404になるだけのベストエフォート。
+  function computeArchiveUrl() {
+    const host = location.hostname;
+    if (!host.endsWith(".2chan.net")) return null;
+    const sub = host.split(".")[0];
+    const path = location.pathname
+      .replace(/^\//, "")
+      .replace(/\.[a-zA-Z0-9]+$/, "")
+      .replace(/\//g, "_");
+    const folder = `${host}_${path}`;
+    return `https://${sub}2.ftbucket.info/${sub}/cont/${folder}/index.htm`;
+  }
+
   function jumpTo(id) {
     const el = containerById.get(String(id));
     if (!el) return;
@@ -134,7 +150,16 @@
     setTimeout(() => el.classList.remove("futaba-helper-flash"), 1200);
   }
 
-  iframe.addEventListener("load", sendReplies);
+  iframe.addEventListener("load", () => {
+    sendReplies();
+    const archiveUrl = computeArchiveUrl();
+    if (archiveUrl) {
+      iframe.contentWindow.postMessage(
+        { type: "futaba-helper:archive", url: archiveUrl },
+        panelOrigin
+      );
+    }
+  });
 
   window.addEventListener("message", (event) => {
     if (event.source !== iframe.contentWindow) return;
