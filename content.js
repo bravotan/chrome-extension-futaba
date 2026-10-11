@@ -202,7 +202,7 @@
   function jumpTo(id) {
     const el = containerById.get(String(id));
     if (!el) return;
-    el.scrollIntoView({ behavior: "smooth", block: "center" });
+    el.scrollIntoView({ behavior: "auto", block: "center" });
     el.classList.remove("futaba-helper-flash");
     // reflow を挟んでアニメーションを再トリガーできるようにする
     void el.offsetWidth;
