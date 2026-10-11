@@ -5,7 +5,7 @@
   "description": "ふたばちゃんねる(2chan.net)PC版に情報表示用パネルをiframeで追加する拡張機能",
   "content_scripts": [
     {
-      "matches": ["*://*.2chan.net/*"],
+      "matches": ["*://*.2chan.net/*", "*://*.ftbucket.info/*"],
       "css": ["content.css"],
       "js": ["extract.js", "content.js"],
       "run_at": "document_end"
@@ -19,7 +19,7 @@
         "panel/panel.js",
         "panel/colors.js"
       ],
-      "matches": ["*://*.2chan.net/*"]
+      "matches": ["*://*.2chan.net/*", "*://*.ftbucket.info/*"]
     }
   ]
 }
