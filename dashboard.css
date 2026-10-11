@@ -30,6 +30,15 @@ h1 {
   border-radius: 6px;
 }
 
+#sort {
+  font: inherit;
+  font-size: 13px;
+  padding: 6px 10px;
+  border: 1px solid #c3c2b7;
+  border-radius: 6px;
+  background: #fcfcfb;
+}
+
 button {
   font: inherit;
   font-size: 13px;
@@ -79,6 +88,21 @@ main {
 .thread-meta {
   font-size: 11px;
   color: #52514e;
+}
+
+.thread-remaining {
+  font-size: 11px;
+  font-weight: 600;
+  color: #52514e;
+  margin-top: 2px;
+}
+
+.thread-remaining.warning {
+  color: #c98500;
+}
+
+.thread-remaining.critical {
+  color: #d03b3b;
 }
 
 .thread-links {
