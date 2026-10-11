@@ -81,11 +81,13 @@
   }
 
   const MINIMAP_THRESHOLD = 60; // panel/panel.js の同名定数と合わせる
+  let lastReplies = []; // 画像一覧(ギャラリー)表示用に最新のレス一覧を保持
 
   function sendReplies() {
     buildContainerMap();
     const replies = FutabaExtract.extractReplies(threEl);
     if (replies.length === 0) return;
+    lastReplies = replies;
     buildPositions();
     // ミニマップ判定は panel.js からの返信を待たず、ここで直接幅を決める
     // (メッセージの往復に依存すると失敗ポイントが増えるため)。
@@ -208,6 +210,71 @@
     setTimeout(() => el.classList.remove("futaba-helper-flash"), 1200);
   }
 
+  // スレ内の画像だけを一覧できるギャラリー(オーバーレイ)。
+  // パネルは幅が狭い(ミニマップ時72px)のでパネル内には作らず、ページ側に重ねて表示する。
+  const GALLERY_ID = "futaba-helper-gallery-backdrop";
+
+  function closeGallery() {
+    const el = document.getElementById(GALLERY_ID);
+    if (el) el.remove();
+    document.removeEventListener("keydown", onGalleryKeydown);
+  }
+
+  function onGalleryKeydown(event) {
+    if (event.key === "Escape") closeGallery();
+  }
+
+  function openGallery() {
+    closeGallery();
+    const items = lastReplies.filter((r) => r.thumbUrl);
+    if (items.length === 0) return;
+
+    const backdrop = document.createElement("div");
+    backdrop.id = GALLERY_ID;
+    backdrop.addEventListener("click", (event) => {
+      if (event.target === backdrop) closeGallery();
+    });
+
+    const panel = document.createElement("div");
+    panel.id = "futaba-helper-gallery-panel";
+
+    const header = document.createElement("div");
+    header.id = "futaba-helper-gallery-header";
+    const title = document.createElement("span");
+    title.textContent = `画像一覧 (${items.length}件)`;
+    const closeBtn = document.createElement("button");
+    closeBtn.textContent = "×";
+    closeBtn.addEventListener("click", closeGallery);
+    header.appendChild(title);
+    header.appendChild(closeBtn);
+
+    const grid = document.createElement("div");
+    grid.id = "futaba-helper-gallery-grid";
+    items.forEach((reply) => {
+      const item = document.createElement("button");
+      item.className = "futaba-helper-gallery-item";
+      const img = document.createElement("img");
+      img.src = reply.thumbUrl;
+      img.loading = "lazy";
+      img.alt = `No.${reply.resNo}`;
+      const label = document.createElement("span");
+      label.textContent = `No.${reply.resNo}`;
+      item.appendChild(img);
+      item.appendChild(label);
+      item.addEventListener("click", () => {
+        closeGallery();
+        jumpTo(reply.id);
+      });
+      grid.appendChild(item);
+    });
+
+    panel.appendChild(header);
+    panel.appendChild(grid);
+    backdrop.appendChild(panel);
+    document.body.appendChild(backdrop);
+    document.addEventListener("keydown", onGalleryKeydown);
+  }
+
   iframe.addEventListener("load", () => {
     sendReplies();
     const archiveUrl = computeArchiveUrl();
@@ -228,6 +295,8 @@
     if (!data) return;
     if (data.type === "futaba-helper:jump") {
       jumpTo(data.id);
+    } else if (data.type === "futaba-helper:gallery-open") {
+      openGallery();
     }
   });
 

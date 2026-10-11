@@ -61,11 +61,28 @@ function jumpToReply(id) {
   window.parent.postMessage({ type: "futaba-helper:jump", id }, "*");
 }
 
+function openGallery() {
+  window.parent.postMessage({ type: "futaba-helper:gallery-open" }, "*");
+}
+
+function renderGalleryButton(replies) {
+  if (!replies.some((r) => r.kind === "media")) return;
+  const root = document.getElementById("panel-root");
+  const btn = document.createElement("button");
+  btn.id = "gallery-button";
+  btn.type = "button";
+  btn.textContent = "画像";
+  btn.title = "スレ内の画像を一覧表示";
+  btn.addEventListener("click", openGallery);
+  root.insertBefore(btn, root.firstChild);
+}
+
 function renderReplies(replies) {
   currentReplies = replies;
   const root = document.getElementById("panel-root");
   root.innerHTML = "";
   hideTooltip();
+  renderGalleryButton(replies);
 
   if (replies.length === 0) return;
 

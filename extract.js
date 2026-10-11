@@ -8,14 +8,17 @@
 // <a class="sod" id="sd<投稿ID>">そうだねx<件数></a> という形。
 // レス番号は <span class="rsc">1</span> のように振られる(OPには無いので0扱いにする)。
 window.FutabaExtract = (function () {
-  function hasOpMedia(threEl) {
+  // OPの画像要素(最初の<table>より前にある<img>)。無ければnull。
+  function findOpThumb(threEl) {
     for (const child of threEl.children) {
       if (child.tagName === "TABLE") break; // 最初のレスに到達したら終了
-      if (child.tagName === "IMG" || (child.querySelector && child.querySelector("img"))) {
-        return true;
+      if (child.tagName === "IMG") return child;
+      if (child.querySelector) {
+        const img = child.querySelector("img");
+        if (img) return img;
       }
     }
-    return false;
+    return null;
   }
 
   function parseGood(text) {
@@ -33,21 +36,22 @@ window.FutabaExtract = (function () {
 
   function extractReplies(threEl) {
     if (!threEl) return [];
-    const opMedia = hasOpMedia(threEl);
+    const opThumb = findOpThumb(threEl);
 
     return Array.from(threEl.querySelectorAll("a.sod")).map((sod) => {
       const rtd = sod.closest("td.rtd");
       const container = rtd || threEl;
-      const hasMedia = rtd ? !!rtd.querySelector("img") : opMedia;
+      const imgEl = rtd ? rtd.querySelector("img") : opThumb;
       const idMatch = sod.id.match(/^sd(\d+)$/);
       const rscEl = rtd ? rtd.querySelector(".rsc") : null;
 
       return {
         id: idMatch ? idMatch[1] : null,
         resNo: rscEl ? parseInt(rscEl.textContent, 10) : 0,
-        kind: hasMedia ? "media" : "text",
+        kind: imgEl ? "media" : "text",
         good: parseGood(sod.textContent),
         comment: commentText(container),
+        thumbUrl: imgEl ? imgEl.src : null,
       };
     });
   }
