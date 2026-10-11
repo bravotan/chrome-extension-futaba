@@ -18,7 +18,7 @@ body {
   height: 100%;
 }
 
-#gallery-button {
+.panel-toolbar-button {
   flex-shrink: 0;
   display: block;
   width: 100%;
@@ -34,8 +34,17 @@ body {
   cursor: pointer;
 }
 
-#gallery-button:hover {
+.panel-toolbar-button:hover {
   background: #e7e6e1;
+}
+
+.panel-toolbar-button.new-button {
+  color: #ffffff;
+  background: #d03b3b;
+}
+
+.panel-toolbar-button.new-button:hover {
+  background: #b83333;
 }
 
 .reply-heatmap {
@@ -85,6 +94,11 @@ body {
   min-height: 1px;
   padding: 0;
   border-bottom: none;
+}
+
+/* 前回訪問時より後の新着レスを示す左端のマーカー */
+.reply-row.is-new {
+  box-shadow: inset 3px 0 0 #d03b3b;
 }
 
 /* 現在ブラウザで見えている範囲を示す三角マーカー(帯オーバーレイだと縞模様に埋もれて

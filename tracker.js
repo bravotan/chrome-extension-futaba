@@ -36,6 +36,10 @@ window.FutabaTracker = (function () {
     });
   }
 
+  function get(id) {
+    return getAll().then((threads) => threads[id] || null);
+  }
+
   function list() {
     return getAll().then((threads) =>
       Object.values(threads).sort((a, b) => b.lastSeen - a.lastSeen)
@@ -53,5 +57,5 @@ window.FutabaTracker = (function () {
     return setAll({});
   }
 
-  return { list, upsert, remove, clear };
+  return { list, get, upsert, remove, clear };
 })();

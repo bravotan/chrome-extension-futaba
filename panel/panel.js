@@ -65,16 +65,29 @@ function openGallery() {
   window.parent.postMessage({ type: "futaba-helper:gallery-open" }, "*");
 }
 
-function renderGalleryButton(replies) {
-  if (!replies.some((r) => r.kind === "media")) return;
+function renderToolbar(replies) {
   const root = document.getElementById("panel-root");
-  const btn = document.createElement("button");
-  btn.id = "gallery-button";
-  btn.type = "button";
-  btn.textContent = "画像";
-  btn.title = "スレ内の画像を一覧表示";
-  btn.addEventListener("click", openGallery);
-  root.insertBefore(btn, root.firstChild);
+
+  if (replies.some((r) => r.kind === "media")) {
+    const btn = document.createElement("button");
+    btn.className = "panel-toolbar-button";
+    btn.type = "button";
+    btn.textContent = "画像";
+    btn.title = "スレ内の画像を一覧表示";
+    btn.addEventListener("click", openGallery);
+    root.insertBefore(btn, root.firstChild);
+  }
+
+  const newReplies = replies.filter((r) => r.isNew);
+  if (newReplies.length > 0) {
+    const btn = document.createElement("button");
+    btn.className = "panel-toolbar-button new-button";
+    btn.type = "button";
+    btn.textContent = `新着 ${newReplies.length}`;
+    btn.title = "前回訪問時からの新着レスへジャンプ";
+    btn.addEventListener("click", () => jumpToReply(newReplies[0].id));
+    root.insertBefore(btn, root.firstChild);
+  }
 }
 
 function renderReplies(replies) {
@@ -82,7 +95,7 @@ function renderReplies(replies) {
   const root = document.getElementById("panel-root");
   root.innerHTML = "";
   hideTooltip();
-  renderGalleryButton(replies);
+  renderToolbar(replies);
 
   if (replies.length === 0) return;
 
@@ -98,7 +111,7 @@ function renderReplies(replies) {
     const { hex, lum } = FutabaHeatmap.heatColor(reply.kind, t);
 
     const row = document.createElement("div");
-    row.className = "reply-row";
+    row.className = reply.isNew ? "reply-row is-new" : "reply-row";
     row.style.backgroundColor = hex;
     row.dataset.index = String(index);
 

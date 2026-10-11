@@ -28,6 +28,17 @@
   animation: futaba-helper-flash 1.2s ease-out;
 }
 
+#futaba-helper-new-banner {
+  margin: 6px 0;
+  padding: 6px 10px;
+  background: #d03b3b;
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 13px;
+  text-align: center;
+  border-radius: 4px;
+}
+
 #futaba-helper-gallery-backdrop {
   position: fixed;
   inset: 0;

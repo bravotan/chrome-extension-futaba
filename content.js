@@ -83,10 +83,20 @@
   const MINIMAP_THRESHOLD = 60; // panel/panel.js の同名定数と合わせる
   let lastReplies = []; // 画像一覧(ギャラリー)表示用に最新のレス一覧を保持
 
+  // 前回訪問時点での最大レス番号。前回の記録が無い(=初回訪問)場合は null のままにし、
+  // 新着扱いを一切しない。iframe読み込み直後に非同期で埋まる。
+  let newSinceResNo = null;
+  let newBannerInserted = false;
+
   function sendReplies() {
     buildContainerMap();
     const replies = FutabaExtract.extractReplies(threEl);
     if (replies.length === 0) return;
+    if (newSinceResNo !== null) {
+      replies.forEach((r) => {
+        r.isNew = r.resNo > newSinceResNo;
+      });
+    }
     lastReplies = replies;
     buildPositions();
     // ミニマップ判定は panel.js からの返信を待たず、ここで直接幅を決める
@@ -97,6 +107,24 @@
       panelOrigin
     );
     sendViewport();
+    insertNewBannerOnce(replies);
+  }
+
+  // 前回訪問より後に増えたレスの先頭に「ここから新着」の区切りを1回だけ差し込む。
+  // 以降スレが伸びても区切りの位置(=前回訪問との境目)は動かさない。
+  function insertNewBannerOnce(replies) {
+    if (newBannerInserted || newSinceResNo === null) return;
+    const newReplies = replies.filter((r) => r.isNew);
+    if (newReplies.length === 0) return;
+    const firstNew = newReplies[0];
+    const rtdEl = containerById.get(firstNew.id);
+    const table = rtdEl && rtdEl !== threEl ? rtdEl.closest("table") : null;
+    if (!table) return;
+    const banner = document.createElement("div");
+    banner.id = "futaba-helper-new-banner";
+    banner.textContent = `ここから新着 ${newReplies.length}件`;
+    table.parentNode.insertBefore(banner, table);
+    newBannerInserted = true;
   }
 
   function sendViewport() {
@@ -276,17 +304,25 @@
   }
 
   iframe.addEventListener("load", () => {
-    sendReplies();
-    const archiveUrl = computeArchiveUrl();
-    const meta = extractThreadMeta();
-    if (meta) {
+    const threadId = threEl.getAttribute("data-res");
+    const prevLookup = threadId ? FutabaTracker.get(threadId) : Promise.resolve(null);
+
+    prevLookup.then((prev) => {
+      newSinceResNo =
+        prev && typeof prev.lastSeenResNo === "number" ? prev.lastSeenResNo : null;
+      sendReplies();
+
+      const archiveUrl = computeArchiveUrl();
+      const meta = extractThreadMeta();
+      if (!meta) return;
+      const lastSeenResNo = lastReplies.reduce((max, r) => Math.max(max, r.resNo), 0);
       captureThumbnail().then(({ thumbDataUrl, imgUrl }) => {
-        const entry = { ...meta, archiveUrl };
+        const entry = { ...meta, archiveUrl, lastSeenResNo };
         if (thumbDataUrl) entry.thumbDataUrl = thumbDataUrl;
         if (imgUrl) entry.imgUrl = imgUrl;
         FutabaTracker.upsert(entry);
       });
-    }
+    });
   });
 
   window.addEventListener("message", (event) => {
