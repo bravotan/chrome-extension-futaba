@@ -136,6 +136,12 @@ body {
   margin-bottom: 2px;
 }
 
+.tooltip-quote {
+  color: #9fc97a;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
 .tooltip-body {
   white-space: pre-wrap;
   word-break: break-word;

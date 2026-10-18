@@ -1,10 +1,17 @@
 // content.js から実際のレスデータが送られてくるまでのサンプルデータ。
 const SAMPLE_REPLIES = [
-  { id: "s1", resNo: 1, kind: "text", good: 9, comment: "テキストのみのレスの例です。" },
-  { id: "s2", resNo: 2, kind: "media", good: 7, comment: "画像つきレスの例です。" },
-  { id: "s3", resNo: 3, kind: "media", good: 2, comment: "画像つきレスの例です。" },
-  { id: "s4", resNo: 4, kind: "text", good: 17, comment: "そうだねが多いテキストレス。" },
-  { id: "s5", resNo: 5, kind: "text", good: 19, comment: "さらにそうだねが多いレス。" },
+  { id: "s1", resNo: 1, kind: "text", good: 9, quotes: [], body: "テキストのみのレスの例です。" },
+  { id: "s2", resNo: 2, kind: "media", good: 7, quotes: [], body: "画像つきレスの例です。" },
+  { id: "s3", resNo: 3, kind: "media", good: 2, quotes: [], body: "画像つきレスの例です。" },
+  {
+    id: "s4",
+    resNo: 4,
+    kind: "text",
+    good: 17,
+    quotes: ["引用されている行の例"],
+    body: "そうだねが多いテキストレス。",
+  },
+  { id: "s5", resNo: 5, kind: "text", good: 19, quotes: [], body: "さらにそうだねが多いレス。" },
 ];
 
 const KIND_LABEL = { text: "テキスト", media: "画像" };
@@ -26,12 +33,19 @@ function showTooltip(reply, x, y) {
   meta.textContent = `No.${reply.resNo} / ${KIND_LABEL[reply.kind]} / そうだね${reply.good}`;
   tooltip.appendChild(meta);
 
-  if (reply.comment) {
-    const body = document.createElement("div");
-    body.className = "tooltip-body";
-    body.textContent =
-      reply.comment.length > 300 ? `${reply.comment.slice(0, 300)}…` : reply.comment;
-    tooltip.appendChild(body);
+  (reply.quotes || []).forEach((quote) => {
+    const quoteEl = document.createElement("div");
+    quoteEl.className = "tooltip-quote";
+    quoteEl.textContent = `> ${quote}`;
+    tooltip.appendChild(quoteEl);
+  });
+
+  if (reply.body) {
+    const bodyEl = document.createElement("div");
+    bodyEl.className = "tooltip-body";
+    bodyEl.textContent =
+      reply.body.length > 300 ? `${reply.body.slice(0, 300)}…` : reply.body;
+    tooltip.appendChild(bodyEl);
   }
 
   tooltip.hidden = false;
