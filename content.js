@@ -1,13 +1,13 @@
 // ふたば本体(2chan.net)のURLから、アーカイブサイト側の対応URLを組み立てる。
 // 例: https://may.2chan.net/b/res/123.htm ->
-//   FTBucket:      https://may.ftbucket.info/may/cont/may.2chan.net_b_res_123/index.htm
+//   FTBucket:      https://www.ftbucket.info/scrapshot/ftb/cont/may.2chan.net_b_res_123/index.htm
 //   Futaba Forest: https://futabaforest.net/b/res/123.htm
-// (実際に動いている参考スクリプトから確認した規則。全板で通用する保証はないため
-// 外れたらリンク先が404になるだけのベストエフォート。)
+// FTBucket側のURLは板ごとのサブドメイン(may.ftbucket.info等)ではなく
+// www.ftbucket.info 配下に統一された(2026-10時点でユーザーが確認)。
+// 全板で通用する保証はないため外れたらリンク先が404になるだけのベストエフォート。
 function computeArchiveLinks() {
   const host = location.hostname;
   if (!host.endsWith(".2chan.net")) return null;
-  const sub = host.split(".")[0];
   const pathParts = location.pathname.split("/").filter(Boolean);
   if (pathParts.length === 0) return null;
   const boardCode = pathParts[0];
@@ -15,7 +15,7 @@ function computeArchiveLinks() {
   const threadId = filename.replace(/\.[a-zA-Z0-9]+$/, "");
 
   return {
-    ftbucket: `https://${sub}.ftbucket.info/${sub}/cont/${host}_${boardCode}_res_${threadId}/index.htm`,
+    ftbucket: `https://www.ftbucket.info/scrapshot/ftb/cont/${host}_${boardCode}_res_${threadId}/index.htm`,
     futabaForest: `https://futabaforest.net${location.pathname}`,
   };
 }
