@@ -57,5 +57,33 @@ window.FutabaTracker = (function () {
     return setAll({});
   }
 
-  return { list, get, upsert, remove, clear };
+  // ふたば本体のスレURLから、アーカイブサイト側の対応URLを組み立てる。
+  // content.js(その場のURLから)と dashboard.js(記録したURLから、後になって)の
+  // 両方で使うのでここに置き、アーカイブ側のURL規則が変わっても1箇所直せばよいようにする。
+  // 例: https://may.2chan.net/b/res/123.htm ->
+  //   FTBucket:      https://www.ftbucket.info/scrapshot/ftb/cont/may.2chan.net_b_res_123/index.htm
+  //   Futaba Forest: https://futabaforest.net/b/res/123.htm
+  // 全板で通用する保証はないため外れたらリンク先が404になるだけのベストエフォート。
+  function computeArchiveLinks(threadUrl) {
+    let url;
+    try {
+      url = new URL(threadUrl);
+    } catch {
+      return null;
+    }
+    const host = url.hostname;
+    if (!host.endsWith(".2chan.net")) return null;
+    const pathParts = url.pathname.split("/").filter(Boolean);
+    if (pathParts.length === 0) return null;
+    const boardCode = pathParts[0];
+    const filename = pathParts[pathParts.length - 1];
+    const threadId = filename.replace(/\.[a-zA-Z0-9]+$/, "");
+
+    return {
+      ftbucket: `https://www.ftbucket.info/scrapshot/ftb/cont/${host}_${boardCode}_res_${threadId}/index.htm`,
+      futabaForest: `https://futabaforest.net${url.pathname}`,
+    };
+  }
+
+  return { list, get, upsert, remove, clear, computeArchiveLinks };
 })();

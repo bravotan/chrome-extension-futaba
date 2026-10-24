@@ -1,27 +1,7 @@
-// ふたば本体(2chan.net)のURLから、アーカイブサイト側の対応URLを組み立てる。
-// 例: https://may.2chan.net/b/res/123.htm ->
-//   FTBucket:      https://www.ftbucket.info/scrapshot/ftb/cont/may.2chan.net_b_res_123/index.htm
-//   Futaba Forest: https://futabaforest.net/b/res/123.htm
-// FTBucket側のURLは板ごとのサブドメイン(may.ftbucket.info等)ではなく
-// www.ftbucket.info 配下に統一された(2026-10時点でユーザーが確認)。
-// 全板で通用する保証はないため外れたらリンク先が404になるだけのベストエフォート。
-function computeArchiveLinks() {
-  const host = location.hostname;
-  if (!host.endsWith(".2chan.net")) return null;
-  const pathParts = location.pathname.split("/").filter(Boolean);
-  if (pathParts.length === 0) return null;
-  const boardCode = pathParts[0];
-  const filename = pathParts[pathParts.length - 1];
-  const threadId = filename.replace(/\.[a-zA-Z0-9]+$/, "");
-
-  return {
-    ftbucket: `https://www.ftbucket.info/scrapshot/ftb/cont/${host}_${boardCode}_res_${threadId}/index.htm`,
-    futabaForest: `https://futabaforest.net${location.pathname}`,
-  };
-}
-
+// アーカイブURLの組み立て規則は tracker.js の computeArchiveLinks に集約している
+// (dashboard.js からも使うため)。ここでは現在のページのURLを渡すだけ。
 function appendArchiveLinkList(parent, insertMethod) {
-  const links = computeArchiveLinks();
+  const links = FutabaTracker.computeArchiveLinks(location.href);
   if (!links) return null;
 
   const list = document.createElement("ul");
@@ -397,17 +377,14 @@ function appendArchiveLinkList(parent, insertMethod) {
       sendReplies();
       maybeInsertArchiveBanner();
 
-      const archiveLinks = computeArchiveLinks();
       const meta = extractThreadMeta();
       if (!meta) return;
+      // アーカイブURLはここでは保存しない: dashboard.js が表示時に
+      // FutabaTracker.computeArchiveLinks(thread.url) でその都度組み立てる
+      // (規則が変わっても再訪問を待たずダッシュボード側に反映されるようにするため)。
       const lastSeenResNo = lastReplies.reduce((max, r) => Math.max(max, r.resNo), 0);
       captureThumbnail().then(({ thumbDataUrl, imgUrl }) => {
-        const entry = {
-          ...meta,
-          archiveUrl: archiveLinks ? archiveLinks.ftbucket : null,
-          archiveUrlAlt: archiveLinks ? archiveLinks.futabaForest : null,
-          lastSeenResNo,
-        };
+        const entry = { ...meta, lastSeenResNo };
         if (thumbDataUrl) entry.thumbDataUrl = thumbDataUrl;
         if (imgUrl) entry.imgUrl = imgUrl;
         FutabaTracker.upsert(entry);

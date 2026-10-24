@@ -132,18 +132,19 @@ function renderCard(thread) {
   liveLink.textContent = "元スレ";
   links.appendChild(liveLink);
 
-  if (thread.archiveUrl) {
+  // 保存時点のURLではなく表示するたびに組み立てる: アーカイブ側のURL規則が
+  // 後から変わっても、スレに再訪問しなくてもダッシュボード側に反映されるように。
+  const archiveLinks = FutabaTracker.computeArchiveLinks(thread.url);
+  if (archiveLinks) {
     const archiveLink = document.createElement("a");
-    archiveLink.href = thread.archiveUrl;
+    archiveLink.href = archiveLinks.ftbucket;
     archiveLink.target = "_blank";
     archiveLink.rel = "noopener noreferrer";
     archiveLink.textContent = "保管(FTBucket)";
     links.appendChild(archiveLink);
-  }
 
-  if (thread.archiveUrlAlt) {
     const altLink = document.createElement("a");
-    altLink.href = thread.archiveUrlAlt;
+    altLink.href = archiveLinks.futabaForest;
     altLink.target = "_blank";
     altLink.rel = "noopener noreferrer";
     altLink.textContent = "保管(Futaba Forest)";
