@@ -3,8 +3,12 @@ let allThreads = [];
 // expiryText(例: "18:20頃消えます")は時刻のみなので、記録した時点(lastSeen)の日付と
 // 組み合わせて実際の日時に変換する。組み合わせた結果が記録時刻より前になる場合は
 // 日をまたいでいるとみなして+1日する。
+// OPのみ・返信0件のような静かなスレでは「24時04:48頃消えます」のような別形式
+// (おそらく「あと24時間04分48秒」という残り時間のカウントダウン)で出ることが
+// あり、これを時刻として誤読すると実際より早く消滅するように見えてしまうため、
+// 先頭が素直に時刻(HH:MM)になっている場合だけ扱う。
 function parseExpiryDate(thread) {
-  const match = /(\d{1,2}):(\d{2})/.exec(thread.expiryText || "");
+  const match = /^(\d{1,2}):(\d{2})/.exec((thread.expiryText || "").trim());
   if (!match) return null;
   const hour = parseInt(match[1], 10);
   const minute = parseInt(match[2], 10);

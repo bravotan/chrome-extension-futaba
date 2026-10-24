@@ -169,6 +169,55 @@
     return `https://${sub}2.ftbucket.info/${sub}/cont/${folder}/index.htm`;
   }
 
+  // 推定消滅時刻(.cntd)を実際の日時に変換する。
+  // 返信が多い活発なスレでは「18:20頃消えます」のように当日の時刻で出るが、
+  // OPのみ・返信0件のような静かなスレでは「24時04:48頃消えます」のような
+  // 別形式(おそらく「あと24時間04分48秒」という残り時間のカウントダウン)で
+  // 出ることを確認した。後者を時刻として誤読すると、むしろ元気なスレを
+  // 「消滅済み」と誤判定しかねないため、先頭が素直に時刻(HH:MM)になっている
+  // 場合だけ扱い、それ以外(カウントダウン形式など)は判定不能として諦める。
+  function computeExpiryDate() {
+    const expiryEl = threEl.querySelector(".cntd");
+    if (!expiryEl) return null;
+    const match = /^(\d{1,2}):(\d{2})/.exec((expiryEl.textContent || "").trim());
+    if (!match) return null;
+    const now = new Date();
+    return new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate(),
+      parseInt(match[1], 10),
+      parseInt(match[2], 10),
+      0,
+      0
+    );
+  }
+
+  // 推定消滅時刻を過ぎている(=スレが落ちている可能性が高い)場合、ページ上部に
+  // アーカイブへのリンクを一度だけ差し込む。rel="noreferrer" でリファラを渡さない。
+  let archiveBannerInserted = false;
+  function maybeInsertArchiveBanner() {
+    if (archiveBannerInserted) return;
+    const archiveUrl = computeArchiveUrl();
+    if (!archiveUrl) return;
+    const expiryDate = computeExpiryDate();
+    if (!expiryDate || expiryDate.getTime() > Date.now()) return;
+
+    const banner = document.createElement("div");
+    banner.id = "futaba-helper-archive-banner";
+    banner.textContent = "このスレは消滅している可能性があります。 ";
+
+    const link = document.createElement("a");
+    link.href = archiveUrl;
+    link.target = "_blank";
+    link.rel = "noreferrer";
+    link.textContent = "アーカイブ(ftbucket)を見る";
+    banner.appendChild(link);
+
+    threEl.parentNode.insertBefore(banner, threEl);
+    archiveBannerInserted = true;
+  }
+
   // チェックしたスレの情報(タイトル・発生時間・推定消滅時間)をダッシュボード用に記録する。
   function extractThreadMeta() {
     const threadId = threEl.getAttribute("data-res");
@@ -311,6 +360,7 @@
       newSinceResNo =
         prev && typeof prev.lastSeenResNo === "number" ? prev.lastSeenResNo : null;
       sendReplies();
+      maybeInsertArchiveBanner();
 
       const archiveUrl = computeArchiveUrl();
       const meta = extractThreadMeta();
@@ -375,4 +425,8 @@
     subtree: true,
     characterData: true,
   });
+
+  // 消滅予想時刻は、ページを開いたまま何も動きが無くても(=MutationObserverが
+  // 発火しなくても)いずれ過ぎる。開きっぱなしのタブでもバナーが出るよう定期的に確認する。
+  setInterval(maybeInsertArchiveBanner, 60000);
 })();
