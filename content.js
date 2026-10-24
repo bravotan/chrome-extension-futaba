@@ -193,19 +193,27 @@
     );
   }
 
-  // 推定消滅時刻を過ぎている(=スレが落ちている可能性が高い)場合、ページ上部に
-  // アーカイブへのリンクを一度だけ差し込む。rel="noreferrer" でリファラを渡さない。
+  // このページ自身のURLを読み直して、本当にHTTP 404(スレが消えている)を
+  // 返しているか直接確認する。.cntdの推定時刻はスレが静かだとカウントダウン形式に
+  // 化けて信用できない(上のcomputeExpiryDate参照)ので、こちらを確定判定として使う。
+  function checkThreadStatus() {
+    return fetch(location.href, { method: "GET", cache: "no-store" })
+      .then((res) => res.status)
+      .catch(() => null);
+  }
+
+  // スレが消えている(404)ことが確認できた場合、または推定消滅時刻を過ぎている場合に、
+  // ページ上部にアーカイブへのリンクを一度だけ差し込む。
+  // rel="noreferrer" でリファラを渡さない。
   let archiveBannerInserted = false;
-  function maybeInsertArchiveBanner() {
+  function insertArchiveBanner(text) {
     if (archiveBannerInserted) return;
     const archiveUrl = computeArchiveUrl();
     if (!archiveUrl) return;
-    const expiryDate = computeExpiryDate();
-    if (!expiryDate || expiryDate.getTime() > Date.now()) return;
 
     const banner = document.createElement("div");
     banner.id = "futaba-helper-archive-banner";
-    banner.textContent = "このスレは消滅している可能性があります。 ";
+    banner.textContent = `${text} `;
 
     const link = document.createElement("a");
     link.href = archiveUrl;
@@ -216,6 +224,22 @@
 
     threEl.parentNode.insertBefore(banner, threEl);
     archiveBannerInserted = true;
+  }
+
+  function maybeInsertArchiveBanner() {
+    if (archiveBannerInserted) return;
+    if (!computeArchiveUrl()) return; // ふたば本体以外では何もしない(無駄なfetchを避ける)
+
+    checkThreadStatus().then((status) => {
+      if (status === 404) {
+        insertArchiveBanner("このスレは404(存在しません)でした。");
+        return;
+      }
+      const expiryDate = computeExpiryDate();
+      if (expiryDate && expiryDate.getTime() <= Date.now()) {
+        insertArchiveBanner("このスレは消滅している可能性があります。");
+      }
+    });
   }
 
   // チェックしたスレの情報(タイトル・発生時間・推定消滅時間)をダッシュボード用に記録する。
