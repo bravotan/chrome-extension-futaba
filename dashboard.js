@@ -137,8 +137,17 @@ function renderCard(thread) {
     archiveLink.href = thread.archiveUrl;
     archiveLink.target = "_blank";
     archiveLink.rel = "noopener noreferrer";
-    archiveLink.textContent = "保管";
+    archiveLink.textContent = "保管(FTBucket)";
     links.appendChild(archiveLink);
+  }
+
+  if (thread.archiveUrlAlt) {
+    const altLink = document.createElement("a");
+    altLink.href = thread.archiveUrlAlt;
+    altLink.target = "_blank";
+    altLink.rel = "noopener noreferrer";
+    altLink.textContent = "保管(Futaba Forest)";
+    links.appendChild(altLink);
   }
 
   const removeBtn = document.createElement("button");

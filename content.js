@@ -1,3 +1,59 @@
+// ふたば本体(2chan.net)のURLから、アーカイブサイト側の対応URLを組み立てる。
+// 例: https://may.2chan.net/b/res/123.htm ->
+//   FTBucket:      https://may.ftbucket.info/may/cont/may.2chan.net_b_res_123/index.htm
+//   Futaba Forest: https://futabaforest.net/b/res/123.htm
+// (実際に動いている参考スクリプトから確認した規則。全板で通用する保証はないため
+// 外れたらリンク先が404になるだけのベストエフォート。)
+function computeArchiveLinks() {
+  const host = location.hostname;
+  if (!host.endsWith(".2chan.net")) return null;
+  const sub = host.split(".")[0];
+  const pathParts = location.pathname.split("/").filter(Boolean);
+  if (pathParts.length === 0) return null;
+  const boardCode = pathParts[0];
+  const filename = pathParts[pathParts.length - 1];
+  const threadId = filename.replace(/\.[a-zA-Z0-9]+$/, "");
+
+  return {
+    ftbucket: `https://${sub}.ftbucket.info/${sub}/cont/${host}_${boardCode}_res_${threadId}/index.htm`,
+    futabaForest: `https://futabaforest.net${location.pathname}`,
+  };
+}
+
+function appendArchiveLinkList(parent, insertMethod) {
+  const links = computeArchiveLinks();
+  if (!links) return null;
+
+  const list = document.createElement("ul");
+  list.id = "futaba-helper-dead-links";
+
+  [
+    ["FTBucket", links.ftbucket],
+    ["Futaba Forest", links.futabaForest],
+  ].forEach(([label, href]) => {
+    const li = document.createElement("li");
+    const a = document.createElement("a");
+    a.href = href;
+    a.target = "_blank";
+    a.rel = "noreferrer";
+    a.textContent = label;
+    li.appendChild(a);
+    list.appendChild(li);
+  });
+
+  parent[insertMethod](list);
+  return list;
+}
+
+// スレが完全に消滅すると .thre を含む通常のテンプレートではなく、専用の404ページが
+// 返ってくる(h1タグが目印)。この場合、下の.thre前提のロジックには一切到達しない
+// (早期returnされる)ため、ここで別途アーカイブへのリンクを差し込む。
+(function maybeInsertDeadThreadLinks() {
+  if (document.querySelector(".thre")) return; // 通常のスレページ側は下のIIFEに任せる
+  if (!document.querySelector("h1")) return; // 404ページ特有の目印が無ければ何もしない
+  appendArchiveLinkList(document.body, "prepend");
+})();
+
 (function () {
   const threEl = document.querySelector(".thre");
   if (!threEl) {
@@ -153,22 +209,6 @@
     );
   }
 
-  // ふたば本体(2chan.net)を見ているときだけ、ftbucketアーカイブへのリンクを出す。
-  // URL変換規則は実例からの推測(例: https://may.2chan.net/b/res/123.htm ->
-  // https://may2.ftbucket.info/may/cont/may.2chan.net_b_res_123/index.htm)で、
-  // 全板で通用する保証はないため外れたら404になるだけのベストエフォート。
-  function computeArchiveUrl() {
-    const host = location.hostname;
-    if (!host.endsWith(".2chan.net")) return null;
-    const sub = host.split(".")[0];
-    const path = location.pathname
-      .replace(/^\//, "")
-      .replace(/\.[a-zA-Z0-9]+$/, "")
-      .replace(/\//g, "_");
-    const folder = `${host}_${path}`;
-    return `https://${sub}2.ftbucket.info/${sub}/cont/${folder}/index.htm`;
-  }
-
   // 推定消滅時刻(.cntd)を実際の日時に変換する。
   // 返信が多い活発なスレでは「18:20頃消えます」のように当日の時刻で出るが、
   // OPのみ・返信0件のような静かなスレでは「24時04:48頃消えます」のような
@@ -193,53 +233,24 @@
     );
   }
 
-  // このページ自身のURLを読み直して、本当にHTTP 404(スレが消えている)を
-  // 返しているか直接確認する。.cntdの推定時刻はスレが静かだとカウントダウン形式に
-  // 化けて信用できない(上のcomputeExpiryDate参照)ので、こちらを確定判定として使う。
-  function checkThreadStatus() {
-    return fetch(location.href, { method: "GET", cache: "no-store" })
-      .then((res) => res.status)
-      .catch(() => null);
-  }
-
-  // スレが消えている(404)ことが確認できた場合、または推定消滅時刻を過ぎている場合に、
-  // ページ上部にアーカイブへのリンクを一度だけ差し込む。
-  // rel="noreferrer" でリファラを渡さない。
+  // 推定消滅時刻を過ぎている(=間もなく404ページに切り替わる可能性が高い)場合、
+  // ページ上部にアーカイブへのリンクを一度だけ差し込む。本物の404ページ自体への
+  // リンク挿入は、.thre が無いページ用の maybeInsertDeadThreadLinks() 側が担当する
+  // (このスレがまだ存在している間は threEl 前提のこちらで良い)。
   let archiveBannerInserted = false;
-  function insertArchiveBanner(text) {
+  function maybeInsertArchiveBanner() {
     if (archiveBannerInserted) return;
-    const archiveUrl = computeArchiveUrl();
-    if (!archiveUrl) return;
+    const expiryDate = computeExpiryDate();
+    if (!expiryDate || expiryDate.getTime() > Date.now()) return;
 
     const banner = document.createElement("div");
     banner.id = "futaba-helper-archive-banner";
-    banner.textContent = `${text} `;
-
-    const link = document.createElement("a");
-    link.href = archiveUrl;
-    link.target = "_blank";
-    link.rel = "noreferrer";
-    link.textContent = "アーカイブ(ftbucket)を見る";
-    banner.appendChild(link);
+    banner.textContent = "このスレは消滅している可能性があります。";
+    const list = appendArchiveLinkList(banner, "appendChild");
+    if (!list) return;
 
     threEl.parentNode.insertBefore(banner, threEl);
     archiveBannerInserted = true;
-  }
-
-  function maybeInsertArchiveBanner() {
-    if (archiveBannerInserted) return;
-    if (!computeArchiveUrl()) return; // ふたば本体以外では何もしない(無駄なfetchを避ける)
-
-    checkThreadStatus().then((status) => {
-      if (status === 404) {
-        insertArchiveBanner("このスレは404(存在しません)でした。");
-        return;
-      }
-      const expiryDate = computeExpiryDate();
-      if (expiryDate && expiryDate.getTime() <= Date.now()) {
-        insertArchiveBanner("このスレは消滅している可能性があります。");
-      }
-    });
   }
 
   // チェックしたスレの情報(タイトル・発生時間・推定消滅時間)をダッシュボード用に記録する。
@@ -386,12 +397,17 @@
       sendReplies();
       maybeInsertArchiveBanner();
 
-      const archiveUrl = computeArchiveUrl();
+      const archiveLinks = computeArchiveLinks();
       const meta = extractThreadMeta();
       if (!meta) return;
       const lastSeenResNo = lastReplies.reduce((max, r) => Math.max(max, r.resNo), 0);
       captureThumbnail().then(({ thumbDataUrl, imgUrl }) => {
-        const entry = { ...meta, archiveUrl, lastSeenResNo };
+        const entry = {
+          ...meta,
+          archiveUrl: archiveLinks ? archiveLinks.ftbucket : null,
+          archiveUrlAlt: archiveLinks ? archiveLinks.futabaForest : null,
+          lastSeenResNo,
+        };
         if (thumbDataUrl) entry.thumbDataUrl = thumbDataUrl;
         if (imgUrl) entry.imgUrl = imgUrl;
         FutabaTracker.upsert(entry);

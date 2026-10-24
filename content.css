@@ -48,9 +48,35 @@
   font-size: 13px;
   text-align: center;
   border-radius: 4px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 4px 10px;
 }
 
-#futaba-helper-archive-banner a {
+/* 単独(本物の404ページ)で使われる場合: ページ上部に帯として表示 */
+body > #futaba-helper-dead-links {
+  margin: 0;
+  padding: 8px 12px;
+  background: #52514e;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+}
+
+#futaba-helper-dead-links {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  gap: 10px;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-weight: 600;
+  font-size: 13px;
+}
+
+#futaba-helper-dead-links a {
   color: #ffffff;
   text-decoration: underline;
 }
