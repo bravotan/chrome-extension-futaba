@@ -342,6 +342,9 @@ function appendArchiveLinkList(parent, insertMethod) {
 
     const grid = document.createElement("div");
     grid.id = "futaba-helper-gallery-grid";
+    const masonry = document.createElement("div");
+    masonry.id = "futaba-helper-gallery-masonry";
+    grid.appendChild(masonry);
     items.forEach((reply) => {
       const item = document.createElement("button");
       item.className = "futaba-helper-gallery-item";
@@ -357,7 +360,7 @@ function appendArchiveLinkList(parent, insertMethod) {
         closeGallery();
         jumpTo(reply.id);
       });
-      grid.appendChild(item);
+      masonry.appendChild(item);
     });
 
     panel.appendChild(header);

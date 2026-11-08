@@ -96,8 +96,8 @@ body > #futaba-helper-dead-links {
 #futaba-helper-gallery-panel {
   background: #fcfcfb;
   border-radius: 10px;
-  max-width: 900px;
-  width: 100%;
+  width: 90vw;
+  flex-shrink: 0;
   max-height: 90vh;
   display: flex;
   flex-direction: column;
@@ -131,14 +131,22 @@ body > #futaba-helper-dead-links {
 }
 
 #futaba-helper-gallery-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
-  gap: 8px;
+  min-height: 0;
   padding: 16px;
   overflow-y: auto;
 }
 
+/* スクロール領域と分け、列が横へ溢れず画像の高さに合わせて積み上がるようにする。 */
+#futaba-helper-gallery-masonry {
+  column-width: 300px;
+  column-gap: 8px;
+}
+
 .futaba-helper-gallery-item {
+  width: 100%;
+  box-sizing: border-box;
+  break-inside: avoid;
+  margin: 0 0 8px;
   border: 1px solid #e1e0d9;
   border-radius: 6px;
   background: #fff;
@@ -156,8 +164,7 @@ body > #futaba-helper-dead-links {
 
 .futaba-helper-gallery-item img {
   width: 100%;
-  height: 88px;
-  object-fit: cover;
+  height: auto;
   border-radius: 4px;
   display: block;
 }
