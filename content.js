@@ -305,8 +305,53 @@ function appendArchiveLinkList(parent, insertMethod) {
   // スレ内の画像だけを一覧できるギャラリー(オーバーレイ)。
   // パネルは幅が狭い(ミニマップ時72px)のでパネル内には作らず、ページ側に重ねて表示する。
   const GALLERY_ID = "futaba-helper-gallery-backdrop";
+  let stopGalleryLayout = null;
+
+  function startGalleryLayout(masonry) {
+    const columnTarget = 300;
+    const gap = 8;
+    const cards = Array.from(masonry.children);
+    let pendingFrame = null;
+
+    function layout() {
+      pendingFrame = null;
+      const width = masonry.clientWidth;
+      if (width === 0) return;
+      const columns = Math.max(1, Math.floor((width + gap) / (columnTarget + gap)));
+      const columnWidth = (width - (columns - 1) * gap) / columns;
+      masonry.style.setProperty("--futaba-gallery-column-width", `${columnWidth}px`);
+
+      const heights = cards.map((card) => card.getBoundingClientRect().height);
+      const bottoms = Array(columns).fill(0);
+      cards.forEach((card, index) => {
+        // 次の空き位置が最も上の列を使い、同じ高さなら左を優先する。
+        let column = 0;
+        for (let i = 1; i < columns; i++) {
+          if (bottoms[i] < bottoms[column]) column = i;
+        }
+        card.style.left = `${column * (columnWidth + gap)}px`;
+        card.style.top = `${bottoms[column]}px`;
+        bottoms[column] += heights[index] + gap;
+      });
+      masonry.style.height = `${Math.max(0, Math.max(...bottoms) - gap)}px`;
+    }
+
+    // 遅延読み込みで画像の高さが確定したときや、表示幅が変わったときに詰め直す。
+    const observer = new ResizeObserver(() => {
+      if (pendingFrame === null) pendingFrame = requestAnimationFrame(layout);
+    });
+    layout();
+    observer.observe(masonry);
+    cards.forEach((card) => observer.observe(card));
+    return () => {
+      observer.disconnect();
+      if (pendingFrame !== null) cancelAnimationFrame(pendingFrame);
+    };
+  }
 
   function closeGallery() {
+    if (stopGalleryLayout) stopGalleryLayout();
+    stopGalleryLayout = null;
     const el = document.getElementById(GALLERY_ID);
     if (el) el.remove();
     document.removeEventListener("keydown", onGalleryKeydown);
@@ -367,6 +412,7 @@ function appendArchiveLinkList(parent, insertMethod) {
     panel.appendChild(grid);
     backdrop.appendChild(panel);
     document.body.appendChild(backdrop);
+    stopGalleryLayout = startGalleryLayout(masonry);
     document.addEventListener("keydown", onGalleryKeydown);
   }
 

@@ -134,19 +134,18 @@ body > #futaba-helper-dead-links {
   min-height: 0;
   padding: 16px;
   overflow-y: auto;
+  scrollbar-gutter: stable;
 }
 
-/* スクロール領域と分け、列が横へ溢れず画像の高さに合わせて積み上がるようにする。 */
 #futaba-helper-gallery-masonry {
-  column-width: 300px;
-  column-gap: 8px;
+  position: relative;
 }
 
 .futaba-helper-gallery-item {
-  width: 100%;
+  position: absolute;
+  width: var(--futaba-gallery-column-width, 100%);
   box-sizing: border-box;
-  break-inside: avoid;
-  margin: 0 0 8px;
+  margin: 0;
   border: 1px solid #e1e0d9;
   border-radius: 6px;
   background: #fff;
