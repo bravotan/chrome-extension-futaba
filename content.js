@@ -307,7 +307,7 @@ function appendArchiveLinkList(parent, insertMethod) {
   const GALLERY_ID = "futaba-helper-gallery-backdrop";
   let stopGalleryLayout = null;
 
-  function startGalleryLayout(masonry) {
+  function startGalleryLayout(masonry, onLayout) {
     const columnTarget = 300;
     const gap = 8;
     const cards = Array.from(masonry.children);
@@ -334,6 +334,7 @@ function appendArchiveLinkList(parent, insertMethod) {
         bottoms[column] += heights[index] + gap;
       });
       masonry.style.height = `${Math.max(0, Math.max(...bottoms) - gap)}px`;
+      if (onLayout) onLayout();
     }
 
     // 遅延読み込みで画像の高さが確定したときや、表示幅が変わったときに詰め直す。
@@ -361,10 +362,87 @@ function appendArchiveLinkList(parent, insertMethod) {
     if (event.key === "Escape") closeGallery();
   }
 
+  function currentGalleryReply(items) {
+    const viewTop = window.scrollY;
+    const viewBottom = viewTop + window.innerHeight;
+    let firstIndex = -1;
+    let lastIndex = -1;
+
+    // 右端のマップと同じ表示範囲を使う。
+    for (let index = 0; index < positions.length; index++) {
+      const position = positions[index];
+      if (position.hidden || position.bottom < viewTop || position.top > viewBottom) {
+        continue;
+      }
+      if (firstIndex === -1) firstIndex = index;
+      lastIndex = index;
+    }
+    if (firstIndex === -1) return null;
+
+    const centerIndex = Math.floor((firstIndex + lastIndex + 1) / 2);
+    let closest = null;
+    let closestDistance = Infinity;
+    for (const reply of items) {
+      const replyIndex = lastReplies.indexOf(reply);
+      const distance = Math.abs(replyIndex - centerIndex);
+      if (distance < closestDistance) {
+        closest = reply;
+        closestDistance = distance;
+      }
+    }
+    return closest;
+  }
+
+  function animateGalleryFocus(backdrop, image) {
+    const target = image.getBoundingClientRect();
+    if (target.width === 0 || target.height === 0) return;
+
+    const aspectRatio = image.naturalWidth / image.naturalHeight || target.width / target.height;
+    let width = Math.min(window.innerWidth * 0.7, 720);
+    let height = width / aspectRatio;
+    if (height > window.innerHeight * 0.7) {
+      height = window.innerHeight * 0.7;
+      width = height * aspectRatio;
+    }
+
+    const left = (window.innerWidth - width) / 2;
+    const top = (window.innerHeight - height) / 2;
+    const focusImage = image.cloneNode();
+    focusImage.className = "futaba-helper-gallery-focus-image";
+    focusImage.style.left = `${left}px`;
+    focusImage.style.top = `${top}px`;
+    focusImage.style.width = `${width}px`;
+    focusImage.style.height = `${height}px`;
+    backdrop.appendChild(focusImage);
+
+    requestAnimationFrame(() => {
+      setTimeout(() => {
+        const scaleX = target.width / width;
+        const scaleY = target.height / height;
+        focusImage.style.transform = `translate(${target.left - left}px, ${target.top - top}px) scale(${scaleX}, ${scaleY})`;
+      }, 600);
+    });
+    focusImage.addEventListener("transitionend", () => focusImage.remove(), { once: true });
+  }
+
+  function waitForGalleryImages(items) {
+    return Promise.all(
+      items.map((item) => {
+        const image = item.querySelector("img");
+        if (image.complete) return Promise.resolve();
+        return new Promise((resolve) => {
+          image.addEventListener("load", resolve, { once: true });
+          image.addEventListener("error", resolve, { once: true });
+        });
+      })
+    );
+  }
+
   function openGallery() {
     closeGallery();
     const items = lastReplies.filter((r) => r.thumbUrl);
     if (items.length === 0) return;
+    const currentReply = currentGalleryReply(items);
 
     const backdrop = document.createElement("div");
     backdrop.id = GALLERY_ID;
@@ -390,12 +468,15 @@ function appendArchiveLinkList(parent, insertMethod) {
     const masonry = document.createElement("div");
     masonry.id = "futaba-helper-gallery-masonry";
     grid.appendChild(masonry);
-    items.forEach((reply) => {
+    let currentItem = null;
+    const currentItemIndex = items.indexOf(currentReply);
+    const itemsBeforeCurrent = [];
+    items.forEach((reply, index) => {
       const item = document.createElement("button");
       item.className = "futaba-helper-gallery-item";
       const img = document.createElement("img");
+      img.loading = index <= currentItemIndex ? "eager" : "lazy";
       img.src = reply.thumbUrl;
-      img.loading = "lazy";
       img.alt = `No.${reply.resNo}`;
       const label = document.createElement("span");
       label.textContent = `No.${reply.resNo}`;
@@ -406,13 +487,35 @@ function appendArchiveLinkList(parent, insertMethod) {
         jumpTo(reply.id);
       });
       masonry.appendChild(item);
+      if (index <= currentItemIndex) itemsBeforeCurrent.push(item);
+      if (currentReply === reply) currentItem = item;
     });
 
     panel.appendChild(header);
     panel.appendChild(grid);
     backdrop.appendChild(panel);
     document.body.appendChild(backdrop);
-    stopGalleryLayout = startGalleryLayout(masonry);
+    let keepCurrentItemCentered = true;
+    const centerCurrentItem = () => {
+      if (!keepCurrentItemCentered || !currentItem) return;
+      const top = currentItem.offsetTop - (grid.clientHeight - currentItem.offsetHeight) / 2;
+      grid.scrollTop = Math.max(0, top);
+    };
+    stopGalleryLayout = startGalleryLayout(masonry, centerCurrentItem);
+    if (currentItem) {
+      waitForGalleryImages(itemsBeforeCurrent).then(() => {
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            if (!backdrop.isConnected) return;
+            centerCurrentItem();
+            setTimeout(() => {
+              keepCurrentItemCentered = false;
+            }, 3000);
+            animateGalleryFocus(backdrop, currentItem.querySelector("img"));
+          });
+        });
+      });
+    }
     document.addEventListener("keydown", onGalleryKeydown);
   }
 
