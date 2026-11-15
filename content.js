@@ -57,7 +57,7 @@ function appendArchiveLinkList(parent, insertMethod) {
   container.appendChild(iframe);
   document.body.appendChild(container);
 
-  // id(投稿ID) -> ジャンプ先要素、および表示中判定用の位置情報
+  // id(投稿ID) -> delcheckアンカー、および表示中判定用の位置情報
   let containerById = new Map();
   let positions = []; // [{ id, top, bottom }] 文書内での縦位置(document順)
 
@@ -66,37 +66,13 @@ function appendArchiveLinkList(parent, insertMethod) {
     threEl.querySelectorAll("a.sod").forEach((sod) => {
       const idMatch = sod.id.match(/^sd(\d+)$/);
       if (!idMatch) return;
-      // table 全体ではなく td.rtd を使う: 一部の崩れたHTML(閉じタグ漏れ等)で
-      // ブラウザが複数の <table> を1つにマージしてしまうと、そのレス以降ずっと
-      // bounding box が異常に広がり、現在地判定がおかしくなることがあるため、
-      // extract.js と同じ、より狭い td.rtd を基準にする。
+      const delcheck = document.getElementById(`delcheck${idMatch[1]}`);
+      // delcheckはOPと通常レスに共通する投稿単位のアンカー。ログ保存サイトなどで
+      // 見つからない場合も、スレ全体を対象にせず個別レスの要素を使う。
       const rtd = sod.closest("td.rtd");
-      containerById.set(idMatch[1], rtd || threEl);
+      const target = delcheck && threEl.contains(delcheck) ? delcheck : rtd || sod;
+      containerById.set(idMatch[1], target);
     });
-  }
-
-  // OP の要素は sod.closest("table") が無いため threEl(スレ全体) が入っている。
-  // threEl.getBoundingClientRect() をそのまま使うとOPの範囲がスレ全体(先頭〜末尾)に
-  // なってしまい、常に「表示中」判定に引っかかって現在地マーカーが常に先頭寄りに
-  // 引っ張られる(=常に真ん中付近に張り付く)バグになるため、OPは自分の直接の子要素
-  // (最初の<table>より前)だけから範囲を計算する。
-  function opContentRect(el) {
-    let top = null;
-    let bottom = null;
-    let width = 0;
-    for (const child of el.children) {
-      if (child.tagName === "TABLE") break;
-      const rect = child.getBoundingClientRect();
-      if (rect.width === 0 && rect.height === 0) continue;
-      width = Math.max(width, rect.width);
-      if (top === null || rect.top < top) top = rect.top;
-      if (bottom === null || rect.bottom > bottom) bottom = rect.bottom;
-    }
-    if (top === null) {
-      const rect = el.getBoundingClientRect();
-      return { top: rect.top, height: 0, width: 0 };
-    }
-    return { top, height: bottom - top, width };
   }
 
   // 削除されたレスなど display:none 等で描画されていない要素は
@@ -106,8 +82,7 @@ function appendArchiveLinkList(parent, insertMethod) {
   // 幅・高さが両方0の要素は「位置不明」として現在地判定の対象から外す。
   function buildPositions() {
     positions = Array.from(containerById.entries()).map(([id, el]) => {
-      const { top: relTop, height, width } =
-        el === threEl ? opContentRect(threEl) : el.getBoundingClientRect();
+      const { top: relTop, height, width } = el.getBoundingClientRect();
       if (width === 0 && height === 0) {
         return { id, hidden: true };
       }
